@@ -93,15 +93,38 @@ def criar_transacao(
     return dict(row)
 
 
-def listar_transacoes(categoria_id: int | None = None) -> list[dict]:
+def listar_transacoes(
+    categoria_id: int | None = None,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    valor_min: float | None = None,
+    valor_max: float | None = None,
+) -> list[dict]:
+    condicoes = []
+    parametros: list = []
+    if categoria_id is not None:
+        condicoes.append("categoria_id = ?")
+        parametros.append(categoria_id)
+    if data_inicio is not None:
+        condicoes.append("data >= ?")
+        parametros.append(data_inicio)
+    if data_fim is not None:
+        condicoes.append("data <= ?")
+        parametros.append(data_fim)
+    if valor_min is not None:
+        condicoes.append("valor >= ?")
+        parametros.append(valor_min)
+    if valor_max is not None:
+        condicoes.append("valor <= ?")
+        parametros.append(valor_max)
+
+    query = "SELECT * FROM transacoes"
+    if condicoes:
+        query += " WHERE " + " AND ".join(condicoes)
+    query += " ORDER BY data DESC, id DESC"
+
     conn = get_connection()
-    if categoria_id is None:
-        rows = conn.execute("SELECT * FROM transacoes ORDER BY data DESC, id DESC").fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM transacoes WHERE categoria_id = ? ORDER BY data DESC, id DESC",
-            (categoria_id,),
-        ).fetchall()
+    rows = conn.execute(query, parametros).fetchall()
     conn.close()
     return [dict(row) for row in rows]
 

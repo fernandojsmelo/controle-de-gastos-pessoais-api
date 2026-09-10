@@ -26,6 +26,19 @@ O servidor sobe em `http://127.0.0.1:8000`. Documentação interativa em
 `/docs`. O arquivo do banco (`gastos.db`) é criado automaticamente na raiz do
 projeto na primeira inicialização, se não existir.
 
+## Como rodar os testes
+
+```bash
+pytest
+```
+
+A suíte (`tests/`) usa o `TestClient` do FastAPI com um banco SQLite
+temporário por teste (fixture `client` em `tests/conftest.py`, troca
+`database.DB_PATH` via `monkeypatch` antes de abrir o cliente) — nunca toca
+o `gastos.db` de desenvolvimento. `conftest.py` na raiz do projeto (vazio)
+só garante que `app` seja importável independente de como o `pytest` for
+invocado.
+
 ## Estrutura de pastas
 
 ```
@@ -33,14 +46,18 @@ SDD1/
 ├── CLAUDE.md
 ├── requirements.txt
 ├── .gitignore
-├── gastos.db            # criado em runtime, ignorado no Git
+├── conftest.py           # garante "app" importável nos testes
+├── gastos.db             # criado em runtime, ignorado no Git
 ├── app/
-│   ├── main.py           # instância do FastAPI, startup (init_db) e handler de erro 422
-│   ├── database.py        # conexão SQLite (get_connection) e criação do banco (init_db)
-│   ├── models.py          # schemas Pydantic (request/response)
-│   └── routers/            # rotas da API, um módulo por recurso
-├── docs/                   # roteiro de prompts do curso, aula a aula
-├── specs/                  # uma spec por aula (fonte de verdade do escopo)
+│   ├── main.py            # instância do FastAPI, startup (init_db) e handler de erro 422
+│   ├── database.py         # conexão SQLite (get_connection) e criação do banco (init_db)
+│   ├── models.py           # schemas Pydantic (request/response)
+│   └── routers/             # rotas da API, um módulo por recurso
+├── tests/
+│   ├── conftest.py         # fixture client (TestClient + banco temporário)
+│   └── test_api.py         # suíte pytest (fluxos principais + casos de erro)
+├── docs/                    # roteiro de prompts do curso, aula a aula
+├── specs/                   # uma spec por aula (fonte de verdade do escopo)
 └── .claude/
     └── commands/
         └── implementar-spec.md  # slash command /implementar-spec
@@ -93,3 +110,10 @@ SDD1/
   normalmente). Transações sem `categoria_id` também ficam de fora de
   `por_categoria` (não há o que agrupar), mas continuam nos totais gerais.
   `categoria` no resultado é o **nome**, não o id — mais legível num resumo.
+- **Aula 5 — período/valor invertidos como "erro de validação":** `data_inicio
+  > data_fim` e `valor_min > valor_max` não são erros de tipo (o Pydantic já
+  valida isso), então o router de `GET /transacoes` retorna
+  `JSONResponse(422, {"erro": ...})` manualmente para esses dois casos,
+  mesmo formato do handler global — não criamos uma exceção nova só para
+  isso (diferente do `ErroDominio`, reservado a violações detectadas pelo
+  SQLite).

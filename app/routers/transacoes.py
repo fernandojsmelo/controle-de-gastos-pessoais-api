@@ -1,4 +1,7 @@
+from datetime import date
+
 from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import JSONResponse
 
 from app.database import (
     atualizar_transacao,
@@ -24,15 +27,35 @@ def criar(transacao: TransacaoCreate) -> dict:
 
 
 @router.get("/transacoes", response_model=list[Transacao])
-def listar(categoria: str | None = None) -> list[dict]:
-    if categoria is None:
-        return listar_transacoes()
-    if categoria.isdigit():
-        return listar_transacoes(categoria_id=int(categoria))
-    encontrada = buscar_categoria_por_nome(categoria)
-    if encontrada is None:
-        return []
-    return listar_transacoes(categoria_id=encontrada["id"])
+def listar(
+    categoria: str | None = None,
+    data_inicio: date | None = None,
+    data_fim: date | None = None,
+    valor_min: float | None = None,
+    valor_max: float | None = None,
+):
+    if data_inicio is not None and data_fim is not None and data_inicio > data_fim:
+        return JSONResponse(status_code=422, content={"erro": "data_inicio não pode ser depois de data_fim"})
+    if valor_min is not None and valor_max is not None and valor_min > valor_max:
+        return JSONResponse(status_code=422, content={"erro": "valor_min não pode ser maior que valor_max"})
+
+    categoria_id = None
+    if categoria is not None:
+        if categoria.isdigit():
+            categoria_id = int(categoria)
+        else:
+            encontrada = buscar_categoria_por_nome(categoria)
+            if encontrada is None:
+                return []
+            categoria_id = encontrada["id"]
+
+    return listar_transacoes(
+        categoria_id=categoria_id,
+        data_inicio=data_inicio.isoformat() if data_inicio else None,
+        data_fim=data_fim.isoformat() if data_fim else None,
+        valor_min=valor_min,
+        valor_max=valor_max,
+    )
 
 
 @router.put("/transacoes/{id}", response_model=Transacao)
