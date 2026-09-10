@@ -11,6 +11,7 @@ class TransacaoCreate(BaseModel):
     descricao: str
     valor: float = Field(gt=0)
     tipo: TipoTransacao
+    categoria_id: int | None = None
 
     @field_validator("descricao")
     @classmethod
@@ -22,4 +23,12 @@ class TransacaoCreate(BaseModel):
 
 
 class Transacao(TransacaoCreate):
+    id: int
+
+
+class CategoriaCreate(BaseModel):
+    nome: str
+
+
+class Categoria(CategoriaCreate):
     id: int

@@ -1,6 +1,12 @@
 from fastapi import APIRouter, HTTPException, Response
 
-from app.database import atualizar_transacao, criar_transacao, listar_transacoes, remover_transacao
+from app.database import (
+    atualizar_transacao,
+    buscar_categoria_por_nome,
+    criar_transacao,
+    listar_transacoes,
+    remover_transacao,
+)
 from app.models import Transacao, TransacaoCreate
 
 router = APIRouter()
@@ -13,12 +19,20 @@ def criar(transacao: TransacaoCreate) -> dict:
         descricao=transacao.descricao,
         valor=round(transacao.valor, 2),
         tipo=transacao.tipo,
+        categoria_id=transacao.categoria_id,
     )
 
 
 @router.get("/transacoes", response_model=list[Transacao])
-def listar() -> list[dict]:
-    return listar_transacoes()
+def listar(categoria: str | None = None) -> list[dict]:
+    if categoria is None:
+        return listar_transacoes()
+    if categoria.isdigit():
+        return listar_transacoes(categoria_id=int(categoria))
+    encontrada = buscar_categoria_por_nome(categoria)
+    if encontrada is None:
+        return []
+    return listar_transacoes(categoria_id=encontrada["id"])
 
 
 @router.put("/transacoes/{id}", response_model=Transacao)
@@ -29,6 +43,7 @@ def atualizar(id: int, transacao: TransacaoCreate) -> dict:
         descricao=transacao.descricao,
         valor=round(transacao.valor, 2),
         tipo=transacao.tipo,
+        categoria_id=transacao.categoria_id,
     )
     if atualizada is None:
         raise HTTPException(status_code=404, detail="Transação não encontrada")

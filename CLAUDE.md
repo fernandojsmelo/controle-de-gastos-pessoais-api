@@ -76,3 +76,14 @@ SDD1/
   404 no formato padrão do FastAPI (`{"detail": "..."}`). O `{"erro": ...}`
   do CLAUDE.md vale só para 422 de validação — não foi estendido a outros
   status, para não inventar convenção que a spec não pediu.
+- **Aula 3 — `categoria_id` é opcional:** transações podem existir sem
+  categoria. Decisão forçada pela própria spec, que exige manter
+  compatibilidade com as transações da Aula 1/2 (sem categoria); tornar o
+  campo obrigatório exigiria migrar dados antigos para algo que nenhum
+  critério de aceite pede.
+- **Aula 3 — filtro por categoria inexistente retorna lista vazia (200),
+  não 404:** `GET /transacoes?categoria=...` é uma busca numa coleção, não
+  a busca de um recurso por id — lista vazia é a resposta natural de uma
+  busca sem resultados. Também evita ambiguidade quando a Aula 5 combinar
+  `categoria` com outros filtros (período, valor): não há "qual filtro
+  errou" a decidir, só resultado vazio.
