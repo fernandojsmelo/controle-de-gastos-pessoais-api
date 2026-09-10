@@ -133,3 +133,50 @@ def remover_transacao(id: int) -> bool:
     conn.commit()
     conn.close()
     return cursor.rowcount > 0
+
+
+def calcular_saldo() -> tuple[float, float]:
+    conn = get_connection()
+    row = conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END), 0) AS entradas,
+            COALESCE(SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END), 0) AS saidas
+        FROM transacoes
+        """
+    ).fetchone()
+    conn.close()
+    return row["entradas"], row["saidas"]
+
+
+def calcular_totais_mes(mes: str) -> tuple[float, float]:
+    conn = get_connection()
+    row = conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END), 0) AS entradas,
+            COALESCE(SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END), 0) AS saidas
+        FROM transacoes
+        WHERE substr(data, 1, 7) = ?
+        """,
+        (mes,),
+    ).fetchone()
+    conn.close()
+    return row["entradas"], row["saidas"]
+
+
+def resumo_por_categoria(mes: str) -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT c.nome AS categoria, SUM(t.valor) AS total
+        FROM transacoes t
+        JOIN categorias c ON c.id = t.categoria_id
+        WHERE substr(t.data, 1, 7) = ? AND t.tipo = 'saida'
+        GROUP BY c.nome
+        ORDER BY total DESC
+        """,
+        (mes,),
+    ).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]

@@ -3,11 +3,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.database import ErroDominio, init_db
-from app.routers import categorias, transacoes
+from app.routers import categorias, resumo, transacoes
 
 app = FastAPI(title="Controle de Gastos Pessoais")
 app.include_router(transacoes.router)
 app.include_router(categorias.router)
+app.include_router(resumo.router)
 
 
 @app.on_event("startup")

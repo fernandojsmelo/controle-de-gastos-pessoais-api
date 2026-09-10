@@ -87,3 +87,9 @@ SDD1/
   busca sem resultados. Também evita ambiguidade quando a Aula 5 combinar
   `categoria` com outros filtros (período, valor): não há "qual filtro
   errou" a decidir, só resultado vazio.
+- **Aula 4 — `por_categoria` do resumo inclui só `saida`:** a spec pede
+  "quebra de **gastos** por categoria" — "gasto" é despesa, então entradas
+  não entram nessa quebra (mas contam nos totais `entradas`/`saldo` do mês
+  normalmente). Transações sem `categoria_id` também ficam de fora de
+  `por_categoria` (não há o que agrupar), mas continuam nos totais gerais.
+  `categoria` no resultado é o **nome**, não o id — mais legível num resumo.
