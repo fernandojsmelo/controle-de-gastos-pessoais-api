@@ -1,0 +1,48 @@
+import sqlite3
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parent.parent / "gastos.db"
+
+
+def get_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
+def init_db() -> None:
+    conn = get_connection()
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS transacoes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data TEXT NOT NULL,
+            descricao TEXT NOT NULL,
+            valor REAL NOT NULL,
+            tipo TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def criar_transacao(data: str, descricao: str, valor: float, tipo: str) -> dict:
+    conn = get_connection()
+    cursor = conn.execute(
+        "INSERT INTO transacoes (data, descricao, valor, tipo) VALUES (?, ?, ?, ?)",
+        (data, descricao, valor, tipo),
+    )
+    conn.commit()
+    transacao_id = cursor.lastrowid
+    row = conn.execute("SELECT * FROM transacoes WHERE id = ?", (transacao_id,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
+def listar_transacoes() -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute("SELECT * FROM transacoes ORDER BY data DESC, id DESC").fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
