@@ -66,6 +66,13 @@ SDD1/
 
 ## Decisões registradas
 
-_(vazio por enquanto — cada decisão tomada durante uma aula, especialmente as
-marcadas como "a decidir" nas specs, deve ser registrada aqui com uma linha
-breve e o porquê.)_
+- **Aula 2 — validação de escrita:** `valor > 0`, `tipo` válido e `data` ISO
+  válida são validados via tipos do Pydantic (`Field(gt=0)`, `Literal`,
+  `date`) desde a Aula 1; `descricao` não vazia foi adicionada na Aula 2 via
+  `field_validator` (faz `strip()` e rejeita string vazia). Todas essas regras
+  valem tanto para `POST` quanto para `PUT`, pois os dois reutilizam o mesmo
+  schema `TransacaoCreate`.
+- **Aula 2 — formato do 404:** `PUT`/`DELETE` em `id` inexistente retornam
+  404 no formato padrão do FastAPI (`{"detail": "..."}`). O `{"erro": ...}`
+  do CLAUDE.md vale só para 422 de validação — não foi estendido a outros
+  status, para não inventar convenção que a spec não pediu.

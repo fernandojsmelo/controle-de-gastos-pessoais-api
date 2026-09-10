@@ -46,3 +46,26 @@ def listar_transacoes() -> list[dict]:
     rows = conn.execute("SELECT * FROM transacoes ORDER BY data DESC, id DESC").fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+def atualizar_transacao(id: int, data: str, descricao: str, valor: float, tipo: str) -> dict | None:
+    conn = get_connection()
+    cursor = conn.execute(
+        "UPDATE transacoes SET data = ?, descricao = ?, valor = ?, tipo = ? WHERE id = ?",
+        (data, descricao, valor, tipo, id),
+    )
+    conn.commit()
+    if cursor.rowcount == 0:
+        conn.close()
+        return None
+    row = conn.execute("SELECT * FROM transacoes WHERE id = ?", (id,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
+def remover_transacao(id: int) -> bool:
+    conn = get_connection()
+    cursor = conn.execute("DELETE FROM transacoes WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return cursor.rowcount > 0
