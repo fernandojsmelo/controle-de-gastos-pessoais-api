@@ -23,8 +23,23 @@ uvicorn app.main:app --reload
 ```
 
 O servidor sobe em `http://127.0.0.1:8000`. Documentação interativa em
-`/docs`. O arquivo do banco (`gastos.db`) é criado automaticamente na raiz do
-projeto na primeira inicialização, se não existir.
+`/docs`. Dashboard visual em `/` ou `/dashboard`. O arquivo do banco
+(`gastos.db`) é criado automaticamente na raiz do projeto na primeira
+inicialização, se não existir.
+
+### Deploy
+
+Configurações sensíveis a ambiente vêm de variáveis de ambiente (ver
+`.env.example`): `PORT` (porta do Uvicorn, default `8000`), `HOST` (default
+`0.0.0.0`) e `DATABASE_PATH` (caminho do arquivo SQLite, default
+`gastos.db` na raiz). Fora da máquina local, rode com:
+
+```bash
+python -m app.main
+```
+
+que lê `HOST`/`PORT` do ambiente e sobe o Uvicorn programaticamente (em vez
+de `uvicorn app.main:app --reload`, usado só em desenvolvimento).
 
 ## Como rodar os testes
 
@@ -46,13 +61,15 @@ SDD1/
 ├── CLAUDE.md
 ├── requirements.txt
 ├── .gitignore
+├── .env.example           # variáveis de ambiente suportadas (PORT, HOST, DATABASE_PATH)
 ├── conftest.py           # garante "app" importável nos testes
 ├── gastos.db             # criado em runtime, ignorado no Git
 ├── app/
-│   ├── main.py            # instância do FastAPI, startup (init_db) e handler de erro 422
+│   ├── main.py            # instância do FastAPI, startup (init_db), handler de erro 422 e entrypoint de deploy (`python -m app.main`)
 │   ├── database.py         # conexão SQLite (get_connection) e criação do banco (init_db)
 │   ├── models.py           # schemas Pydantic (request/response)
-│   └── routers/             # rotas da API, um módulo por recurso
+│   ├── routers/             # rotas da API, um módulo por recurso
+│   └── static/               # assets estáticos servidos pelo FastAPI (dashboard.html)
 ├── tests/
 │   ├── conftest.py         # fixture client (TestClient + banco temporário)
 │   └── test_api.py         # suíte pytest (fluxos principais + casos de erro)
@@ -117,3 +134,22 @@ SDD1/
   mesmo formato do handler global — não criamos uma exceção nova só para
   isso (diferente do `ErroDominio`, reservado a violações detectadas pelo
   SQLite).
+- **Aula 6 — filtros do `/export.csv` reaproveitam `/transacoes`:** a lógica
+  de resolução e validação dos filtros da Aula 5 (incluindo os 422 de
+  período/valor invertidos) foi extraída para
+  `resolver_transacoes()` em `app/routers/transacoes.py`, usada tanto por
+  `GET /transacoes` quanto por `GET /export.csv` — evita duas implementações
+  divergentes do mesmo filtro.
+- **Aula 6 — colunas do CSV:** `id, data, descricao, valor, tipo,
+  categoria_id`, os mesmos campos do schema `Transacao` (sem juntar o nome
+  da categoria) — mantém o CSV como espelho direto do registro armazenado.
+- **Aula 6 — dashboard sem endpoint novo:** o HTML em `app/static/dashboard.html`
+  consome `GET /saldo` e `GET /resumo?mes=<mês atual>` (calculado no
+  cliente) para montar o gráfico de gastos por categoria e o saldo atual —
+  a spec pede consumir "os endpoints existentes", então nenhuma agregação
+  nova foi criada no backend só para o dashboard.
+- **Aula 6 — deploy via `python -m app.main`:** `HOST`/`PORT` (Uvicorn) e
+  `DATABASE_PATH` (SQLite) viram configuráveis por variável de ambiente,
+  com os mesmos defaults de desenvolvimento quando não definidas. Não há
+  credenciais no projeto hoje; `.env.example` documenta as variáveis sem
+  valores sensíveis, e `.env` real já está no `.gitignore`.

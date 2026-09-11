@@ -1,3 +1,7 @@
+import csv
+import io
+
+
 def criar_transacao(client, **overrides):
     corpo = {
         "data": "2026-05-10",
@@ -266,3 +270,50 @@ def test_resumo_mes_malformado_422(client):
     resposta = client.get("/resumo?mes=2026-13")
     assert resposta.status_code == 422
     assert "erro" in resposta.json()
+
+
+# --- exportação CSV ---
+
+
+def test_export_csv_retorna_csv_valido(client):
+    criar_transacao(client, descricao="Aluguel", valor=1200, tipo="saida")
+    criar_transacao(client, descricao="Salário", valor=3000, tipo="entrada")
+
+    resposta = client.get("/export.csv")
+    assert resposta.status_code == 200
+    assert resposta.headers["content-type"].startswith("text/csv")
+
+    linhas = list(csv.DictReader(io.StringIO(resposta.text)))
+    assert len(linhas) == 2
+    assert {"id", "data", "descricao", "valor", "tipo", "categoria_id"} == set(linhas[0].keys())
+    descricoes = {linha["descricao"] for linha in linhas}
+    assert descricoes == {"Aluguel", "Salário"}
+
+
+def test_export_csv_aplica_filtro_de_categoria(client):
+    categoria_id = criar_categoria(client, "mercado").json()["id"]
+    criar_transacao(client, descricao="Compra no mercado", categoria_id=categoria_id)
+    criar_transacao(client, descricao="Sem categoria")
+
+    resposta = client.get(f"/export.csv?categoria=mercado")
+    linhas = list(csv.DictReader(io.StringIO(resposta.text)))
+    assert len(linhas) == 1
+    assert linhas[0]["descricao"] == "Compra no mercado"
+
+
+def test_export_csv_filtro_periodo_invertido_422(client):
+    resposta = client.get("/export.csv?data_inicio=2026-05-10&data_fim=2026-01-01")
+    assert resposta.status_code == 422
+    assert "erro" in resposta.json()
+
+
+# --- dashboard ---
+
+
+def test_dashboard_raiz_e_rota_dedicada_servem_html(client):
+    for caminho in ("/", "/dashboard"):
+        resposta = client.get(caminho)
+        assert resposta.status_code == 200
+        assert resposta.headers["content-type"].startswith("text/html")
+        assert "/saldo" in resposta.text
+        assert "/resumo" in resposta.text

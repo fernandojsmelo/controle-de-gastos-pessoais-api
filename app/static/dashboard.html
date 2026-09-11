@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Controle de Gastos Pessoais — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #1f2933;
+    }
+    h1 {
+      font-size: 1.4rem;
+    }
+    .saldo {
+      display: flex;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .saldo div {
+      background: #f4f6f8;
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      text-align: center;
+    }
+    .saldo span {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    #mensagem {
+      color: #7b8794;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard — Controle de Gastos Pessoais</h1>
+
+  <div class="saldo">
+    <div>Entradas<span id="entradas">—</span></div>
+    <div>Saídas<span id="saidas">—</span></div>
+    <div>Saldo<span id="saldo">—</span></div>
+  </div>
+
+  <h2>Gastos por categoria (mês atual)</h2>
+  <p id="mensagem"></p>
+  <canvas id="grafico-categorias" width="640" height="360"></canvas>
+
+  <script>
+    async function carregarSaldo() {
+      const resposta = await fetch('/saldo');
+      const dados = await resposta.json();
+      document.getElementById('entradas').textContent = dados.entradas.toFixed(2);
+      document.getElementById('saidas').textContent = dados.saidas.toFixed(2);
+      document.getElementById('saldo').textContent = dados.saldo.toFixed(2);
+    }
+
+    async function carregarGastosPorCategoria() {
+      const mesAtual = new Date().toISOString().slice(0, 7);
+      const resposta = await fetch(`/resumo?mes=${mesAtual}`);
+      const dados = await resposta.json();
+
+      if (!dados.por_categoria || dados.por_categoria.length === 0) {
+        document.getElementById('mensagem').textContent = `Sem gastos por categoria em ${mesAtual}.`;
+        return;
+      }
+
+      const contexto = document.getElementById('grafico-categorias').getContext('2d');
+      new Chart(contexto, {
+        type: 'bar',
+        data: {
+          labels: dados.por_categoria.map((item) => item.categoria),
+          datasets: [{
+            label: `Gastos por categoria — ${mesAtual}`,
+            data: dados.por_categoria.map((item) => item.total),
+            backgroundColor: '#4c6ef5',
+          }],
+        },
+        options: {
+          responsive: false,
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+
+    carregarSaldo();
+    carregarGastosPorCategoria();
+  </script>
+</body>
+</html>
