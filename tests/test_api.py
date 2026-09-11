@@ -287,6 +287,16 @@ def test_saldo(client):
     assert resposta.json() == {"entradas": 1000.0, "saidas": 300.0, "saldo": 700.0}
 
 
+def test_saldo_sem_erro_de_ponto_flutuante(client):
+    # 0.10 + 0.10 + 0.10 em float puro dá 0.30000000000000004 — valor guardado
+    # em centavos (inteiro) no banco evita esse erro de arredondamento acumulado.
+    for _ in range(3):
+        criar_transacao(client, tipo="saida", valor=0.10)
+
+    resposta = client.get("/saldo")
+    assert resposta.json()["saidas"] == 0.30
+
+
 def test_resumo_mes_com_dados(client):
     categoria_id = criar_categoria(client, "alimentacao").json()["id"]
     criar_transacao(client, data="2026-08-05", tipo="entrada", valor=1000)

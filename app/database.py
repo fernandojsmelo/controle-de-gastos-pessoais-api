@@ -18,6 +18,20 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def reais_para_centavos(valor: float) -> int:
+    return round(valor * 100)
+
+
+def centavos_para_reais(centavos: int) -> float:
+    return round(centavos / 100, 2)
+
+
+def _com_valor_em_reais(row: sqlite3.Row) -> dict:
+    transacao = dict(row)
+    transacao["valor"] = centavos_para_reais(transacao["valor"])
+    return transacao
+
+
 def init_db() -> None:
     conn = get_connection()
     conn.execute(
@@ -34,7 +48,7 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             data TEXT NOT NULL,
             descricao TEXT NOT NULL,
-            valor REAL NOT NULL,
+            valor INTEGER NOT NULL,
             tipo TEXT NOT NULL,
             categoria_id INTEGER REFERENCES categorias(id)
         )
@@ -43,6 +57,16 @@ def init_db() -> None:
     colunas = {row["name"] for row in conn.execute("PRAGMA table_info(transacoes)")}
     if "categoria_id" not in colunas:
         conn.execute("ALTER TABLE transacoes ADD COLUMN categoria_id INTEGER REFERENCES categorias(id)")
+
+    # Migração única: bancos criados antes desta mudança guardavam `valor` em
+    # reais (float). A partir daqui, `valor` guarda centavos (inteiro) para
+    # eliminar erro de arredondamento de ponto flutuante acumulado nas somas
+    # de saldo/resumo.
+    versao = conn.execute("PRAGMA user_version").fetchone()[0]
+    if versao == 0:
+        conn.execute("UPDATE transacoes SET valor = CAST(ROUND(valor * 100) AS INTEGER)")
+        conn.execute("PRAGMA user_version = 1")
+
     conn.commit()
     conn.close()
 
@@ -110,7 +134,7 @@ def criar_transacao(
     try:
         cursor = conn.execute(
             "INSERT INTO transacoes (data, descricao, valor, tipo, categoria_id) VALUES (?, ?, ?, ?, ?)",
-            (data, descricao, valor, tipo, categoria_id),
+            (data, descricao, reais_para_centavos(valor), tipo, categoria_id),
         )
         conn.commit()
     except sqlite3.IntegrityError:
@@ -119,7 +143,7 @@ def criar_transacao(
     transacao_id = cursor.lastrowid
     row = conn.execute("SELECT * FROM transacoes WHERE id = ?", (transacao_id,)).fetchone()
     conn.close()
-    return dict(row)
+    return _com_valor_em_reais(row)
 
 
 def listar_transacoes(
@@ -142,10 +166,10 @@ def listar_transacoes(
         parametros.append(data_fim)
     if valor_min is not None:
         condicoes.append("valor >= ?")
-        parametros.append(valor_min)
+        parametros.append(reais_para_centavos(valor_min))
     if valor_max is not None:
         condicoes.append("valor <= ?")
-        parametros.append(valor_max)
+        parametros.append(reais_para_centavos(valor_max))
 
     query = "SELECT * FROM transacoes"
     if condicoes:
@@ -155,7 +179,7 @@ def listar_transacoes(
     conn = get_connection()
     rows = conn.execute(query, parametros).fetchall()
     conn.close()
-    return [dict(row) for row in rows]
+    return [_com_valor_em_reais(row) for row in rows]
 
 
 def atualizar_transacao(
@@ -165,7 +189,7 @@ def atualizar_transacao(
     try:
         cursor = conn.execute(
             "UPDATE transacoes SET data = ?, descricao = ?, valor = ?, tipo = ?, categoria_id = ? WHERE id = ?",
-            (data, descricao, valor, tipo, categoria_id, id),
+            (data, descricao, reais_para_centavos(valor), tipo, categoria_id, id),
         )
         conn.commit()
     except sqlite3.IntegrityError:
@@ -176,7 +200,7 @@ def atualizar_transacao(
         return None
     row = conn.execute("SELECT * FROM transacoes WHERE id = ?", (id,)).fetchone()
     conn.close()
-    return dict(row)
+    return _com_valor_em_reais(row)
 
 
 def remover_transacao(id: int) -> bool:
@@ -198,7 +222,7 @@ def calcular_saldo() -> tuple[float, float]:
         """
     ).fetchone()
     conn.close()
-    return row["entradas"], row["saidas"]
+    return centavos_para_reais(row["entradas"]), centavos_para_reais(row["saidas"])
 
 
 def calcular_totais_mes(mes: str) -> tuple[float, float]:
@@ -214,7 +238,7 @@ def calcular_totais_mes(mes: str) -> tuple[float, float]:
         (mes,),
     ).fetchone()
     conn.close()
-    return row["entradas"], row["saidas"]
+    return centavos_para_reais(row["entradas"]), centavos_para_reais(row["saidas"])
 
 
 def resumo_por_categoria(mes: str) -> list[dict]:
@@ -231,4 +255,4 @@ def resumo_por_categoria(mes: str) -> list[dict]:
         (mes,),
     ).fetchall()
     conn.close()
-    return [dict(row) for row in rows]
+    return [{"categoria": row["categoria"], "total": centavos_para_reais(row["total"])} for row in rows]

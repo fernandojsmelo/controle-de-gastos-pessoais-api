@@ -171,3 +171,15 @@ SDD1/
   não pode ser removida"}`; o usuário precisa reatribuir/remover as
   transações primeiro. `PUT /categorias/{id}` segue o mesmo padrão de
   `PUT /transacoes/{id}`: nome duplicado → 422, id inexistente → 404.
+- **Pós-projeto — dinheiro guardado em centavos (inteiro), não reais
+  (float):** a coluna `valor` em `transacoes` passou a guardar centavos
+  (`INTEGER`) via `reais_para_centavos`/`centavos_para_reais`
+  (`app/database.py`). O contrato da API não muda — `POST`/`PUT
+  /transacoes`, `GET /saldo`, `GET /resumo` e `GET /export.csv` continuam
+  recebendo/devolvendo reais em float — só a soma interna (`SUM` em
+  `calcular_saldo`, `calcular_totais_mes`, `resumo_por_categoria`) deixa de
+  acumular erro de ponto flutuante (ex.: três lançamentos de `0.10` somando
+  `0.30000000000000004` em vez de `0.30`). Bancos existentes são migrados
+  automaticamente e uma única vez em `init_db()`, controlado por `PRAGMA
+  user_version` (mesmo padrão de migração idempotente já usado para a
+  coluna `categoria_id`).
