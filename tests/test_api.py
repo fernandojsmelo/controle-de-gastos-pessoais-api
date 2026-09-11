@@ -276,6 +276,47 @@ def test_filtro_valor_min_nao_numerico_422(client):
     assert "erro" in resposta.json()
 
 
+# --- paginação ---
+
+
+def test_paginacao_limite(client):
+    criar_transacao(client, data="2026-01-01", descricao="Primeira")
+    criar_transacao(client, data="2026-01-02", descricao="Segunda")
+    criar_transacao(client, data="2026-01-03", descricao="Terceira")
+
+    resposta = client.get("/transacoes?limite=2")
+    descricoes = [t["descricao"] for t in resposta.json()]
+    assert descricoes == ["Terceira", "Segunda"]
+
+
+def test_paginacao_limite_e_offset(client):
+    criar_transacao(client, data="2026-01-01", descricao="Primeira")
+    criar_transacao(client, data="2026-01-02", descricao="Segunda")
+    criar_transacao(client, data="2026-01-03", descricao="Terceira")
+
+    resposta = client.get("/transacoes?limite=2&offset=1")
+    descricoes = [t["descricao"] for t in resposta.json()]
+    assert descricoes == ["Segunda", "Primeira"]
+
+
+def test_paginacao_combinada_com_filtro(client):
+    categoria_id = criar_categoria(client, "mercado").json()["id"]
+    criar_transacao(client, data="2026-01-01", descricao="A", categoria_id=categoria_id)
+    criar_transacao(client, data="2026-01-02", descricao="B", categoria_id=categoria_id)
+    criar_transacao(client, data="2026-01-03", descricao="Fora", categoria_id=None)
+
+    resposta = client.get(f"/transacoes?categoria=mercado&limite=1")
+    descricoes = [t["descricao"] for t in resposta.json()]
+    assert descricoes == ["B"]
+
+
+def test_sem_limite_retorna_tudo(client):
+    for i in range(5):
+        criar_transacao(client, data=f"2026-01-0{i + 1}", descricao=f"T{i}")
+
+    assert len(client.get("/transacoes").json()) == 5
+
+
 # --- saldo e resumo ---
 
 

@@ -183,3 +183,8 @@ SDD1/
   automaticamente e uma única vez em `init_db()`, controlado por `PRAGMA
   user_version` (mesmo padrão de migração idempotente já usado para a
   coluna `categoria_id`).
+- **Pós-projeto — paginação de `GET /transacoes` é opt-in:** `limite`/
+  `offset` são opcionais; sem `limite`, o endpoint continua devolvendo tudo
+  (comportamento antigo preservado, nenhum teste ou cliente existente
+  quebra). `GET /export.csv` não aceita esses parâmetros — exportar deve
+  trazer o conjunto filtrado inteiro, nunca uma página.

@@ -152,6 +152,8 @@ def listar_transacoes(
     data_fim: str | None = None,
     valor_min: float | None = None,
     valor_max: float | None = None,
+    limite: int | None = None,
+    offset: int | None = None,
 ) -> list[dict]:
     condicoes = []
     parametros: list = []
@@ -175,6 +177,12 @@ def listar_transacoes(
     if condicoes:
         query += " WHERE " + " AND ".join(condicoes)
     query += " ORDER BY data DESC, id DESC"
+    if limite is not None:
+        query += " LIMIT ?"
+        parametros.append(limite)
+        if offset is not None:
+            query += " OFFSET ?"
+            parametros.append(offset)
 
     conn = get_connection()
     rows = conn.execute(query, parametros).fetchall()

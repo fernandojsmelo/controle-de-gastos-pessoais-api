@@ -21,10 +21,13 @@ def resolver_transacoes(
     data_fim: date | None = None,
     valor_min: float | None = None,
     valor_max: float | None = None,
+    limite: int | None = None,
+    offset: int | None = None,
 ) -> list[dict] | JSONResponse:
     """Aplica os filtros da Aula 5 e devolve a lista de transações, ou uma
     JSONResponse 422 se os filtros forem inválidos. Compartilhado entre
-    `GET /transacoes` e `GET /export.csv`."""
+    `GET /transacoes` e `GET /export.csv` (que nunca passa `limite`/`offset` —
+    exportar deve trazer o conjunto filtrado inteiro, não uma página)."""
     if data_inicio is not None and data_fim is not None and data_inicio > data_fim:
         return JSONResponse(status_code=422, content={"erro": "data_inicio não pode ser depois de data_fim"})
     if valor_min is not None and valor_max is not None and valor_min > valor_max:
@@ -46,6 +49,8 @@ def resolver_transacoes(
         data_fim=data_fim.isoformat() if data_fim else None,
         valor_min=valor_min,
         valor_max=valor_max,
+        limite=limite,
+        offset=offset,
     )
 
 
@@ -67,6 +72,8 @@ def listar(
     data_fim: date | None = None,
     valor_min: float | None = None,
     valor_max: float | None = None,
+    limite: int | None = None,
+    offset: int | None = None,
 ):
     return resolver_transacoes(
         categoria=categoria,
@@ -74,6 +81,8 @@ def listar(
         data_fim=data_fim,
         valor_min=valor_min,
         valor_max=valor_max,
+        limite=limite,
+        offset=offset,
     )
 
 
