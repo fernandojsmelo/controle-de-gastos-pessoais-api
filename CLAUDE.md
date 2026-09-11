@@ -60,7 +60,7 @@ invocado. CI (`.github/workflows/tests.yml`) roda essa mesma suíte a cada
 ```
 SDD1/
 ├── CLAUDE.md
-├── requirements.txt
+├── requirements.txt        # versões fixas (==) das dependências diretas
 ├── .gitignore
 ├── .env.example           # variáveis de ambiente suportadas (PORT, HOST, DATABASE_PATH)
 ├── .github/
