@@ -56,11 +56,17 @@
       border-radius: 6px;
       padding: 0.5rem 1rem;
     }
-    #botao-nova-transacao {
+    #botao-nova-transacao,
+    .botao-primario {
       background: #4c6ef5;
       color: #fff;
       font-weight: 600;
       white-space: nowrap;
+    }
+    .botao-secundario {
+      background: #c92a2a;
+      color: #fff;
+      font-weight: 600;
     }
     #form-transacao {
       background: #f4f6f8;
@@ -132,7 +138,8 @@
         <input type="text" name="descricao" required>
       </label>
       <div class="acoes">
-        <button type="submit">Salvar</button>
+        <button type="submit" class="botao-primario">Salvar</button>
+        <button type="button" id="botao-cancelar-transacao" class="botao-secundario">Cancelar</button>
         <span id="erro-transacao"></span>
       </div>
     </form>
@@ -206,11 +213,18 @@
     }
 
     const botaoNovaTransacao = document.getElementById('botao-nova-transacao');
+    const botaoCancelarTransacao = document.getElementById('botao-cancelar-transacao');
     const formTransacao = document.getElementById('form-transacao');
     const erroTransacao = document.getElementById('erro-transacao');
 
     botaoNovaTransacao.addEventListener('click', () => {
       formTransacao.hidden = !formTransacao.hidden;
+      erroTransacao.textContent = '';
+    });
+
+    botaoCancelarTransacao.addEventListener('click', () => {
+      formTransacao.reset();
+      formTransacao.hidden = true;
       erroTransacao.textContent = '';
     });
 

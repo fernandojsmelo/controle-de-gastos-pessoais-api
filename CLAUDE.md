@@ -193,3 +193,10 @@ SDD1/
   formulário, saldo, gráfico) foi envolvido num `.container` branco com
   sombra, que flutua sobre o novo fundo cinza — preserva o contraste de
   texto/cores pensado para fundo claro sem precisar reajustar cada cor.
+- **Pós-projeto — botão "Cancelar" no formulário de nova transação:**
+  fecha e reseta o formulário sem salvar (`formTransacao.reset()` +
+  `hidden = true`), ao lado do "Salvar". "Salvar" ganhou a classe
+  `.botao-primario` (azul, já usada no botão "+ Nova transação") e
+  "Cancelar" a `.botao-secundario`, em vermelho `#c92a2a` (a pedido do
+  usuário; reaproveita a cor já usada em `#erro-transacao` em vez de
+  introduzir um tom novo).
