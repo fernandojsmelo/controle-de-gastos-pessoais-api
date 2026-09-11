@@ -109,6 +109,52 @@ def test_criar_categoria_duplicada_422(client):
     assert "erro" in resposta.json()
 
 
+def test_atualizar_categoria(client):
+    categoria_id = criar_categoria(client, "lazer").json()["id"]
+
+    resposta = client.put(f"/categorias/{categoria_id}", json={"nome": "entretenimento"})
+    assert resposta.status_code == 200
+    assert resposta.json()["nome"] == "entretenimento"
+    assert [c["nome"] for c in client.get("/categorias").json()] == ["entretenimento"]
+
+
+def test_atualizar_categoria_inexistente_404(client):
+    resposta = client.put("/categorias/999", json={"nome": "x"})
+    assert resposta.status_code == 404
+
+
+def test_atualizar_categoria_para_nome_duplicado_422(client):
+    criar_categoria(client, "lazer")
+    categoria_id = criar_categoria(client, "saude").json()["id"]
+
+    resposta = client.put(f"/categorias/{categoria_id}", json={"nome": "lazer"})
+    assert resposta.status_code == 422
+    assert "erro" in resposta.json()
+
+
+def test_excluir_categoria_sem_uso(client):
+    categoria_id = criar_categoria(client, "lazer").json()["id"]
+
+    resposta = client.delete(f"/categorias/{categoria_id}")
+    assert resposta.status_code == 204
+    assert client.get("/categorias").json() == []
+
+
+def test_excluir_categoria_inexistente_404(client):
+    resposta = client.delete("/categorias/999")
+    assert resposta.status_code == 404
+
+
+def test_excluir_categoria_em_uso_422(client):
+    categoria_id = criar_categoria(client, "lazer").json()["id"]
+    criar_transacao(client, categoria_id=categoria_id)
+
+    resposta = client.delete(f"/categorias/{categoria_id}")
+    assert resposta.status_code == 422
+    assert "erro" in resposta.json()
+    assert [c["nome"] for c in client.get("/categorias").json()] == ["lazer"]
+
+
 # --- filtros ---
 
 

@@ -75,6 +75,34 @@ def buscar_categoria_por_nome(nome: str) -> dict | None:
     return dict(row) if row else None
 
 
+def atualizar_categoria(id: int, nome: str) -> dict | None:
+    conn = get_connection()
+    try:
+        cursor = conn.execute("UPDATE categorias SET nome = ? WHERE id = ?", (nome, id))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        raise ErroDominio(f"Categoria '{nome}' já existe")
+    if cursor.rowcount == 0:
+        conn.close()
+        return None
+    row = conn.execute("SELECT * FROM categorias WHERE id = ?", (id,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
+def remover_categoria(id: int) -> bool:
+    conn = get_connection()
+    em_uso = conn.execute("SELECT 1 FROM transacoes WHERE categoria_id = ? LIMIT 1", (id,)).fetchone()
+    if em_uso is not None:
+        conn.close()
+        raise ErroDominio("Categoria em uso, não pode ser removida")
+    cursor = conn.execute("DELETE FROM categorias WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    return cursor.rowcount > 0
+
+
 def criar_transacao(
     data: str, descricao: str, valor: float, tipo: str, categoria_id: int | None = None
 ) -> dict:

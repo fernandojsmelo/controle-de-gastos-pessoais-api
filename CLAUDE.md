@@ -163,3 +163,11 @@ SDD1/
   cliente a mais do `POST /transacoes` que já existia. Erros 422 do backend
   são exibidos inline; sucesso atualiza saldo e gráfico sem recarregar a
   página.
+- **Pós-projeto — `DELETE /categorias/{id}` bloqueia se a categoria estiver
+  em uso:** decisão explícita (não é comportamento óbvio de uma FK) —
+  remover a categoria de uma transação existente silenciosamente
+  (`categoria_id = NULL`) alteraria dado histórico do usuário sem ele pedir.
+  Em vez disso, `remover_categoria` retorna 422 `{"erro": "Categoria em uso,
+  não pode ser removida"}`; o usuário precisa reatribuir/remover as
+  transações primeiro. `PUT /categorias/{id}` segue o mesmo padrão de
+  `PUT /transacoes/{id}`: nome duplicado → 422, id inexistente → 404.
