@@ -52,7 +52,8 @@ temporário por teste (fixture `client` em `tests/conftest.py`, troca
 `database.DB_PATH` via `monkeypatch` antes de abrir o cliente) — nunca toca
 o `gastos.db` de desenvolvimento. `conftest.py` na raiz do projeto (vazio)
 só garante que `app` seja importável independente de como o `pytest` for
-invocado.
+invocado. CI (`.github/workflows/tests.yml`) roda essa mesma suíte a cada
+`push`/`pull_request` para `main`.
 
 ## Estrutura de pastas
 
@@ -62,6 +63,9 @@ SDD1/
 ├── requirements.txt
 ├── .gitignore
 ├── .env.example           # variáveis de ambiente suportadas (PORT, HOST, DATABASE_PATH)
+├── .github/
+│   └── workflows/
+│       └── tests.yml       # CI: roda pytest a cada push/PR para main
 ├── conftest.py           # garante "app" importável nos testes
 ├── gastos.db             # criado em runtime, ignorado no Git
 ├── app/
