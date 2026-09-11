@@ -153,3 +153,9 @@ SDD1/
   com os mesmos defaults de desenvolvimento quando não definidas. Não há
   credenciais no projeto hoje; `.env.example` documenta as variáveis sem
   valores sensíveis, e `.env` real já está no `.gitignore`.
+- **Aula 6 — botão "+ Nova transação" no dashboard:** `app/static/dashboard.html`
+  ganhou um formulário (data, valor, tipo, categoria, descrição) que chama
+  `POST /transacoes` direto do navegador — não é um endpoint novo, só um
+  cliente a mais do `POST /transacoes` que já existia. Erros 422 do backend
+  são exibidos inline; sucesso atualiza saldo e gráfico sem recarregar a
+  página.

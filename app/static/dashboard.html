@@ -35,10 +35,98 @@
       color: #7b8794;
       font-size: 0.9rem;
     }
+    .cabecalho {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+    }
+    #botao-nova-transacao {
+      background: #4c6ef5;
+      color: #fff;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    #form-transacao {
+      background: #f4f6f8;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin: 1rem 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem 1rem;
+    }
+    #form-transacao[hidden] {
+      display: none;
+    }
+    #form-transacao label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.85rem;
+      color: #52606d;
+      gap: 0.25rem;
+    }
+    #form-transacao label.linha-toda {
+      grid-column: 1 / -1;
+    }
+    #form-transacao input,
+    #form-transacao select {
+      font: inherit;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid #cbd2d9;
+      border-radius: 4px;
+    }
+    #form-transacao .acoes {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    #erro-transacao {
+      color: #c92a2a;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
-  <h1>Dashboard — Controle de Gastos Pessoais</h1>
+  <div class="cabecalho">
+    <h1>Dashboard — Controle de Gastos Pessoais</h1>
+    <button type="button" id="botao-nova-transacao">+ Nova transação</button>
+  </div>
+
+  <form id="form-transacao" hidden>
+    <label>Data
+      <input type="date" name="data" required>
+    </label>
+    <label>Valor
+      <input type="number" name="valor" step="0.01" min="0.01" required>
+    </label>
+    <label>Tipo
+      <select name="tipo" required>
+        <option value="saida">Saída</option>
+        <option value="entrada">Entrada</option>
+      </select>
+    </label>
+    <label>Categoria
+      <select name="categoria_id">
+        <option value="">Sem categoria</option>
+      </select>
+    </label>
+    <label class="linha-toda">Descrição
+      <input type="text" name="descricao" required>
+    </label>
+    <div class="acoes">
+      <button type="submit">Salvar</button>
+      <span id="erro-transacao"></span>
+    </div>
+  </form>
 
   <div class="saldo">
     <div>Entradas<span id="entradas">—</span></div>
@@ -51,6 +139,8 @@
   <canvas id="grafico-categorias" width="640" height="360"></canvas>
 
   <script>
+    let grafico = null;
+
     async function carregarSaldo() {
       const resposta = await fetch('/saldo');
       const dados = await resposta.json();
@@ -64,13 +154,19 @@
       const resposta = await fetch(`/resumo?mes=${mesAtual}`);
       const dados = await resposta.json();
 
+      if (grafico) {
+        grafico.destroy();
+        grafico = null;
+      }
+
       if (!dados.por_categoria || dados.por_categoria.length === 0) {
         document.getElementById('mensagem').textContent = `Sem gastos por categoria em ${mesAtual}.`;
         return;
       }
+      document.getElementById('mensagem').textContent = '';
 
       const contexto = document.getElementById('grafico-categorias').getContext('2d');
-      new Chart(contexto, {
+      grafico = new Chart(contexto, {
         type: 'bar',
         data: {
           labels: dados.por_categoria.map((item) => item.categoria),
@@ -87,8 +183,60 @@
       });
     }
 
+    async function carregarCategorias() {
+      const resposta = await fetch('/categorias');
+      const categorias = await resposta.json();
+      const select = document.querySelector('#form-transacao select[name="categoria_id"]');
+      for (const categoria of categorias) {
+        const opcao = document.createElement('option');
+        opcao.value = categoria.id;
+        opcao.textContent = categoria.nome;
+        select.appendChild(opcao);
+      }
+    }
+
+    const botaoNovaTransacao = document.getElementById('botao-nova-transacao');
+    const formTransacao = document.getElementById('form-transacao');
+    const erroTransacao = document.getElementById('erro-transacao');
+
+    botaoNovaTransacao.addEventListener('click', () => {
+      formTransacao.hidden = !formTransacao.hidden;
+      erroTransacao.textContent = '';
+    });
+
+    formTransacao.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      erroTransacao.textContent = '';
+
+      const dados = new FormData(formTransacao);
+      const corpo = {
+        data: dados.get('data'),
+        descricao: dados.get('descricao'),
+        valor: Number(dados.get('valor')),
+        tipo: dados.get('tipo'),
+        categoria_id: dados.get('categoria_id') ? Number(dados.get('categoria_id')) : null,
+      };
+
+      const resposta = await fetch('/transacoes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      });
+
+      if (!resposta.ok) {
+        const erro = await resposta.json();
+        erroTransacao.textContent = erro.erro || 'Não foi possível salvar a transação.';
+        return;
+      }
+
+      formTransacao.reset();
+      formTransacao.hidden = true;
+      await Promise.all([carregarSaldo(), carregarGastosPorCategoria()]);
+    });
+
     carregarSaldo();
     carregarGastosPorCategoria();
+    carregarCategorias();
   </script>
 </body>
 </html>
