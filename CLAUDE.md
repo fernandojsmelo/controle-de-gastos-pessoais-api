@@ -188,3 +188,8 @@ SDD1/
   (comportamento antigo preservado, nenhum teste ou cliente existente
   quebra). `GET /export.csv` não aceita esses parâmetros — exportar deve
   trazer o conjunto filtrado inteiro, nunca uma página.
+- **Pós-projeto — fundo `#898989` no dashboard, a pedido do usuário:** em
+  vez de recolorir cada elemento individualmente, o conteúdo (cabeçalho,
+  formulário, saldo, gráfico) foi envolvido num `.container` branco com
+  sombra, que flutua sobre o novo fundo cinza — preserva o contraste de
+  texto/cores pensado para fundo claro sem precisar reajustar cada cor.

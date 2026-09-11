@@ -7,10 +7,18 @@
   <style>
     body {
       font-family: system-ui, sans-serif;
-      max-width: 720px;
-      margin: 2rem auto;
-      padding: 0 1rem;
+      margin: 0;
+      padding: 2rem 1rem;
+      background: #898989;
       color: #1f2933;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.75rem 2rem 2.25rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
     h1 {
       font-size: 1.4rem;
@@ -96,47 +104,49 @@
   </style>
 </head>
 <body>
-  <div class="cabecalho">
-    <h1>Dashboard — Controle de Gastos Pessoais</h1>
-    <button type="button" id="botao-nova-transacao">+ Nova transação</button>
-  </div>
-
-  <form id="form-transacao" hidden>
-    <label>Data
-      <input type="date" name="data" required>
-    </label>
-    <label>Valor
-      <input type="number" name="valor" step="0.01" min="0.01" required>
-    </label>
-    <label>Tipo
-      <select name="tipo" required>
-        <option value="saida">Saída</option>
-        <option value="entrada">Entrada</option>
-      </select>
-    </label>
-    <label>Categoria
-      <select name="categoria_id">
-        <option value="">Sem categoria</option>
-      </select>
-    </label>
-    <label class="linha-toda">Descrição
-      <input type="text" name="descricao" required>
-    </label>
-    <div class="acoes">
-      <button type="submit">Salvar</button>
-      <span id="erro-transacao"></span>
+  <div class="container">
+    <div class="cabecalho">
+      <h1>Dashboard — Controle de Gastos Pessoais</h1>
+      <button type="button" id="botao-nova-transacao">+ Nova transação</button>
     </div>
-  </form>
 
-  <div class="saldo">
-    <div>Entradas<span id="entradas">—</span></div>
-    <div>Saídas<span id="saidas">—</span></div>
-    <div>Saldo<span id="saldo">—</span></div>
+    <form id="form-transacao" hidden>
+      <label>Data
+        <input type="date" name="data" required>
+      </label>
+      <label>Valor
+        <input type="number" name="valor" step="0.01" min="0.01" required>
+      </label>
+      <label>Tipo
+        <select name="tipo" required>
+          <option value="saida">Saída</option>
+          <option value="entrada">Entrada</option>
+        </select>
+      </label>
+      <label>Categoria
+        <select name="categoria_id">
+          <option value="">Sem categoria</option>
+        </select>
+      </label>
+      <label class="linha-toda">Descrição
+        <input type="text" name="descricao" required>
+      </label>
+      <div class="acoes">
+        <button type="submit">Salvar</button>
+        <span id="erro-transacao"></span>
+      </div>
+    </form>
+
+    <div class="saldo">
+      <div>Entradas<span id="entradas">—</span></div>
+      <div>Saídas<span id="saidas">—</span></div>
+      <div>Saldo<span id="saldo">—</span></div>
+    </div>
+
+    <h2>Gastos por categoria (mês atual)</h2>
+    <p id="mensagem"></p>
+    <canvas id="grafico-categorias" width="640" height="360"></canvas>
   </div>
-
-  <h2>Gastos por categoria (mês atual)</h2>
-  <p id="mensagem"></p>
-  <canvas id="grafico-categorias" width="640" height="360"></canvas>
 
   <script>
     let grafico = null;
